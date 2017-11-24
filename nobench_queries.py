@@ -1,10 +1,6 @@
 import random
 
 class QueryHandler:
-    def __init__(self, queryType, table):
-        self.queryType = queryType
-        self.table = table
-
     def q1(self):
         query = "SELECT JSON_VALUE(NOBENCH_DOC, '$.str1') AS str1, JSON_VALUE(NOBENCH_DOC, '$.num') AS num FROM :table"
         print query
@@ -37,9 +33,13 @@ class QueryHandler:
 
     def q6(self):
         query = "SELECT JSON_QUERY(NOBENCH_DOC, '$') AS nobench_doc FROM :table WHERE JSON_VALUE(NOBENCH_DOC, '$.num') BETWEEN :start AND :end"
+        startNum = random.randint(self.range[0], self.range[1])
+        endNum = random.randint(self.range[0], self.range[1])
 
     def q7(self):
         query = "SELECT JSON_QUERY(NOBENCH_DOC, '$') AS nobench_doc FROM :table WHERE JSON_VALUE(NOBENCH_DOC, '$.dyn1') BETWEEN :start AND :end"
+        startNum = random.randint(self.range[0], self.range[1])
+        endNum = random.randint(self.range[0], self.range[1])
 
     def q8(self):
         query = "SELECT JSON_QUERY(NOBENCH_DOC, '$.nested_arr') AS nested_arr FROM :table WHERE JSON_EXISTS(NOBENCH_DOC,'$?(@.nested_arr == $ITEM)' PASSING :item AS 'ITEM')",
@@ -52,6 +52,26 @@ class QueryHandler:
 
     def q10(self):
         query = "SELECT count(*) FROM :table WHERE (JSON_VALUE(NOBENCH_DOC, '$.num') BETWEEN :start AND :end) GROUP BY JSON_VALUE(NOBENCH_DOC, '$.thousandth')"
+        startNum = random.randint(self.range[0], self.range[1])
+        endNum = random.randint(self.range[0], self.range[1])
 
     def q11(self):
         query = "SELECT JSON_QUERY(NOBENCH_DOC, '$') AS nobench_doc FROM :table left INNER JOIN :table right ON JSON_VALUE(left.NOBENCH_DOC, '$.str1') = JSON_VALUE(right.NOBENCH_DOC, '$.nested_obj.str') WHERE JSON_VALUE(left.NOBENCH_DOC, '$.num') BETWEEN :start AND :end"
+        startNum = random.randint(self.range[0], self.range[1])
+        endNum = random.randint(self.range[0], self.range[1])
+
+################################################
+#### Controls
+################################################
+
+    handlers = {1: q1, 2: q2, 3: q3, 4: q4, 5: q5, 6: q6, 7: q7, 8: q8, 9: q9, 10: q10, 11: q11}
+    
+    def __init__(self, queryType, table, num_range):
+        self.queryType = queryType
+        self.table = table
+        self.range = num_range
+        self.handler = self.handlers[queryType]
+
+    def run(self):
+        self.handler(self)
+

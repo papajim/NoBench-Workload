@@ -1,3 +1,5 @@
+import random
+import time
 import cx_Oracle
 import threading
 from nobench_queries import QueryHandler
@@ -19,25 +21,26 @@ class NoBenchWorker:
         self.conn_pool = None
 
     def runThread(self):
-        con = pool.acquire()
-        cur = con.cursor()
+        #conn = self.conn_pool.acquire()
+        #cur = con.cursor()
+        handler = QueryHandler(self.queryType, self.table, self.range)
         for i in xrange(self.recordcount):
-            cur.execute("select * from dual")
-            seqval, = cur.fetchone()
-            print("Thread", threading.current_thread().name, "fetched sequence =", seqval)
+            handler.run()
+        #cur.close()
+        #conn.release()
 
     def runThreadTest(self):
         out_p, in_p = self.pipe
         out_p.close()
         for i in xrange(self.recordcount):
             self.lock.acquire()
-            in_p.send(1)
+            in_p.send([random.randrange(1, 100), random.randrange(1,100), random.randrange(1,100)])
             self.lock.release()
 
     def start(self):
         #self.conn_pool = cx_Oracle.SessionPool(self.user, self.passwd, self.db_url, min = 2, max = 10, increment = 1, threaded = True)
         for i in xrange(self.threads):
-            thread = threading.Thread(name="#"+str(i), target=self.runThreadTest)
+            thread = threading.Thread(name="#"+str(i), target=self.runThread)
             self.threadArray.append(thread)
             thread.start()
         
