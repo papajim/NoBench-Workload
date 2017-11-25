@@ -1,5 +1,5 @@
 import time
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Action
 from multiprocessing import Process, Pipe, Lock
 from nobench_worker import NoBenchWorker
 
@@ -51,18 +51,27 @@ def monitor(pipe, interval):
 
 ################################################################################################
 
+#class LoadFromFile (Action):
+#    def __call__ (self, parser, namespace, values, option_string = None):
+#        with values as f:
+#            parser.parse_args(f.read().split(), namespace)
+
 if __name__ == "__main__":
     parser = ArgumentParser(description="NoBench Workload Simulator")
-    parser.add_argument("--db_url", type=str, help="Database connection url", required=True)
-    parser.add_argument("--user", type=str, help="Database user", required=True)
-    parser.add_argument("--passwd", type=str, default="", help="Database user password")
-    parser.add_argument("--workers", type=int, default=1, help="Number of workers")
-    parser.add_argument("--threads", type=int, default=1, help="Number of threads")
-    parser.add_argument("--query", type=int, default=1, help="Number of query")
-    parser.add_argument("--table", type=str, default="NOBENCH", help="Name of table")
-    parser.add_argument("--recordcount", type=int, default=100, help="Name of ops per worker thread")
-    parser.add_argument("--range", metavar="INT", type=int, nargs=2, help="Record range", required=True)
-    parser.add_argument("--interval", type=int, default=10, help="Statistics interval")
+    #parser.add_argument('--params', metavar="FILE", type=open, action=LoadFromFile, help="Load params from file")
+    parser.add_argument("--db_url", metavar="STR", type=str, help="Database connection url", required=False)
+    parser.add_argument("--user", metavar="STR", type=str, help="Database user", required=False)
+    parser.add_argument("--passwd", metavar="STR", type=str, default="", help="Database user password")
+    parser.add_argument("--workers", metavar="INT", type=int, default=1, help="Number of workers")
+    parser.add_argument("--threads", metavar="INT", type=int, default=1, help="Number of threads")
+    parser.add_argument("--query", metavar="INT", type=int, default=1, choices=xrange(1, 12), help="Number of query")
+    parser.add_argument("--table", metavar="STR", type=str, default="NOBENCH", help="Name of table")
+    parser.add_argument("--recordcount", metavar="INT", type=int, default=100, help="Number of ops per worker thread")
+    parser.add_argument("--range", metavar="INT", type=int, nargs=2, help="Record range", required=False)
+    parser.add_argument("--interval", metavar="INT", type=int, default=10, help="Statistics interval")
+    parser.add_argument("--str1", metavar="FILE", type=str, help="str1 values file")
+    parser.add_argument("--nested", metavar="FILE", type=str, help="nested values file")
+    parser.add_argument("--sparse", metavar="FILE", type=str, help="sparse values file")
 
     args = parser.parse_args()
     db_params = {
