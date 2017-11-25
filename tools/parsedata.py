@@ -52,7 +52,8 @@ def parseData(filename, rewrite=False):
         g2.write(s+"\n")
 
     for item in nested_dict:
-        g3.write(item + "\t" + str(nested_dict[item]) + "\n")
+        g3.write(item+"\n")
+        #g3.write(item + "\t" + str(nested_dict[item]) + "\n")
     
     for s in sparse_dict:
         g4.write(s+"\n")

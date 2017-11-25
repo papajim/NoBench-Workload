@@ -8,10 +8,10 @@ python nobench_wrapper.py \
    --threads 2 \
    --query 1 \
    --table NOBENCH \
-   --recordcount 100 \
+   --recordcount 5 \
    --range 0 1000 \
-   --interval 10 \
-   --str1 str1.in \
-   --nested nested.in \
-   --sparse sparse.in
-
+   --interval 10 #\
+#   --str1 data/1million_stats_str1.dat \
+#   --dyn1 data/1million_stats_dyn1.dat \
+#   --nested data/1million_stats_nested.dat \
+#   --sparse data/1million_stats_nested.dat
