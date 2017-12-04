@@ -1,1 +1,1 @@
-NoBenchWorkload
+NoBenchWorkload For Oracle JSON
