@@ -3,8 +3,8 @@ from argparse import ArgumentParser, Action
 from multiprocessing import Process, Pipe, Lock
 from nobench_worker import NoBenchWorker
 
-def runWorker(pipe, lock, db_params, queryType, threads, recordcount, lookup_files) :
-    worker = NoBenchWorker(pipe, lock, db_params, queryType, threads, recordcount, lookup_files)
+def runWorker(pipe, lock, db_params, queryType, threads, recordcount, lookup_values, lookup_values_text) :
+    worker = NoBenchWorker(pipe, lock, db_params, queryType, threads, recordcount, lookup_values, lookup_values_text)
     worker.start()
 
 ################################################################################################
@@ -43,6 +43,7 @@ def monitor(pipe, interval):
         except EOFError:
             nowTime = time.time()
             diff = nowTime - loopTime
+            if diff == 0: diff+=1
             avgResponse = sumResponse / (count * 1.0) if count > 0 else sumResponse
             print "{0:.0f}\t{1:.3f}\t{2:.3f}\t{3:.3f}\t{4:.3f}".format(round(nowTime*1000-baseTime), (count*1.0)/diff, avgResponse, minResponse, maxResponse)
             break
@@ -64,15 +65,13 @@ if __name__ == "__main__":
     parser.add_argument("--passwd", metavar="STR", type=str, default="", help="Database user password")
     parser.add_argument("--workers", metavar="INT", type=int, default=1, help="Number of workers")
     parser.add_argument("--threads", metavar="INT", type=int, default=1, help="Number of threads")
-    parser.add_argument("--query", metavar="INT", type=int, default=1, choices=xrange(1, 12), help="Number of query")
+    parser.add_argument("--query", metavar="INT", type=int, default=1, choices=xrange(1, 13), help="Number of query")
     parser.add_argument("--table", metavar="STR", type=str, default="NOBENCH", help="Name of table")
     parser.add_argument("--recordcount", metavar="INT", type=int, default=100, help="Number of ops per worker thread")
     parser.add_argument("--range", metavar="INT", type=int, nargs=2, help="Record range", required=False)
     parser.add_argument("--interval", metavar="INT", type=int, default=10, help="Statistics interval")
-    parser.add_argument("--str1", metavar="FILE", type=str, help="str1 values file")
-    parser.add_argument("--dyn1", metavar="FILE", type=str, help="dyn1 values file")
-    parser.add_argument("--nested", metavar="FILE", type=str, help="nested values file")
-    parser.add_argument("--sparse", metavar="FILE", type=str, help="sparse values file")
+    parser.add_argument("--lookup", metavar="FILE", type=str, help="str1 and dyn1 values")
+    parser.add_argument("--lookup_text", metavar="FILE", type=str, help="sparse and nested array values")
 
     args = parser.parse_args()
     db_params = {
@@ -83,57 +82,37 @@ if __name__ == "__main__":
         "range": args.range
     }
 
-    str1_options = None
-    str1_options_len = 0
-    if args.str1 is not None:
-        f = open(args.str1, "r")
-        str1_options = f.read().splitlines()
-        str1_options_len = len(str1_options)
+    lookup_values = None
+    if args.lookup is not None:
+        lookup_values = {}
+        f = open(args.lookup, "r")
+        lines = f.read().splitlines()
+        for line in lines:
+            l = line.split()
+            lookup_values[int(l[0])] = {"str1": l[1], "dyn1": l[2]}
+            #lookup_values[int(l[0])] = [l[1], l[2]]
         f.close()
-
-    dyn1_options = None
-    dyn1_options_len = 0
-    if args.dyn1 is not None:
-        f = open(args.dyn1, "r")
-        dyn1_options = f.read().splitlines()
-        dyn1_options_len = len(dyn1_options)
+    
+    lookup_values_text = None
+    if args.lookup_text is not None:
+        f = open(args.lookup_text, "r")
+        lines = f.read().splitlines()
+        sparse_options = lines[0].split()
+        nested_options = lines[1].split()
+        lookup_values_text = {
+            "nested_options": nested_options,
+            "nested_options_len": len(nested_options),
+            "sparse_options": sparse_options,
+            "sparse_options_len": len(sparse_options)
+        }
         f.close()
-
-    nested_options = None
-    nested_options_len = 0
-    if args.nested is not None:
-        f = open(args.nested, "r")
-        nested_options = f.read().splitlines()
-        nested_options_len = len(nested_options)
-        f.close()
-
-    sparse_options = None
-    sparse_options_len = 0
-    if args.sparse is not None:
-        f = open(args.sparse, "r")
-        sparse_options = f.read().splitlines()
-        sparse_options_len = len(sparse_options)
-        f.close()
-
-    lookup_files = {
-        "str1_options": str1_options,
-        "str1_options_len": str1_options_len,
-        "dyn1_options": dyn1_options,
-        "dyn1_options_len": dyn1_options_len,
-        "nested_options": nested_options,
-        "nested_options_len": nested_options_len,
-        "sparse_options": sparse_options,
-        "sparse_options_len": sparse_options_len
-    }
-
-    time.sleep(10)
 
     processArray = []
     out_p, in_p = Pipe(False)
     lock = Lock()
 
     for i in xrange(args.workers):
-        proc = Process(target=runWorker, args=((out_p, in_p),lock,db_params,args.query,args.threads,args.recordcount, lookup_files))
+        proc = Process(target=runWorker, args=((out_p, in_p),lock,db_params,args.query,args.threads,args.recordcount, lookup_values, lookup_values_text))
         processArray.append(proc)
         proc.start()
 

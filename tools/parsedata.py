@@ -8,13 +8,10 @@ def parseData(filename, rewrite=False):
     f = open(prefix+'.dat', 'r')
     if rewrite:
         g = open(prefix+'_parsed.dat', 'w+')
-    g1 = open(prefix+'_stats_dyn1.dat', 'w+')
-    g2 = open(prefix+'_stats_str1.dat', 'w+')
-    g3 = open(prefix+'_stats_nested.dat', 'w+')
-    g4 = open(prefix+'_stats_sparse.dat', 'w+')
+    g1 = open(prefix+'_lookup.dat', 'w+')
+    g2 = open(prefix+'_lookup_text.dat', 'w+')
 
-    dyn1_dict = {}
-    str1_dict = {}
+    lookup_values = {}
     nested_dict = {}
     sparse_dict = {}
 
@@ -26,11 +23,10 @@ def parseData(filename, rewrite=False):
         count += 1
         data = json.loads(line_in)
         
-        if data["str1"] not in str1_dict:
-            str1_dict[data["str1"]] = 1
-
-        if str(data["dyn1"]) not in dyn1_dict:
-            dyn1_dict[str(data["dyn1"])] = 1
+        lookup_values[data["num"]] = {
+            "str1": data["str1"],
+            "dyn1": data["dyn1"]
+        }
 
         for e in data["nested_arr"]:
             if e not in nested_dict:
@@ -45,25 +41,21 @@ def parseData(filename, rewrite=False):
             line_out = "{0}, {1}\n".format(str(data["num"]), json.dumps(data))
             g.write(line_out)
 
-    for d in dyn1_dict:
-        g1.write(d+"\n")
+    for v in lookup_values:
+        l = "{0} {1} {2}\n".format(v, lookup_values[v]["str1"], lookup_values[v]["dyn1"])
+        g1.write(l)
 
-    for s in str1_dict:
-        g2.write(s+"\n")
-
-    for item in nested_dict:
-        g3.write(item+"\n")
-        #g3.write(item + "\t" + str(nested_dict[item]) + "\n")
+    line = " ".join(sparse_dict.keys())
+    g2.write(line+"\n")
     
-    for s in sparse_dict:
-        g4.write(s+"\n")
+    line = " ".join(nested_dict.keys())
+    g2.write(line)
+    g2.write("\n")
 
     f.close()
     if rewrite: g.close()
     g1.close()
     g2.close()
-    g3.close()
-    g4.close()
 
     print count
 
